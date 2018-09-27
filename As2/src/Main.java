@@ -1,5 +1,7 @@
+import java.util.List;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main 
@@ -7,13 +9,12 @@ public class Main
 	
 	public static void main(String[] args)
 	{
-		//main method here
-		final int NR_PIECES = readFile(new File("small.txt"));
-		System.out.println(NR_PIECES);
+		List<Piece> allPieces = readFile(new File("small.txt"));
+		System.out.println(allPieces);
 	}
 
-	private static int readFile(File file) {
-		int nrPieces = 0;
+	private static List<Piece> readFile(File file) {
+		List<Piece> allPieces = new ArrayList<Piece>();
 		try
 		{
 			Scanner s = new Scanner(file);
@@ -22,14 +23,14 @@ public class Main
 				int index = s.nextInt();
 				int length = s.nextInt();
 				Piece p = new Piece(index, length);
-				nrPieces++;
+				allPieces.add(p);
 			}
 		}
 		catch(IOException e)
 		{
 			e.printStackTrace();
 		}
-		return nrPieces;
+		return allPieces;
 	}
 	
 }
