@@ -29,7 +29,7 @@ public class Model{
 		addVariables();
 		addObjective();
 		addDoPiecesConstraints();
-		addLengthConstraints();		// TO DO
+		addLengthConstraints();		// TODO
 		cplex.exportModel("model.lp");
 	}
 	
@@ -55,7 +55,7 @@ public class Model{
 			y.put(r, var);
 			// add a variable for each piece, for this rod (x_ik)
 			for (Piece p : pieces) {
-				IloNumVar var2 = cplex.intVar(0, Integer.MAX_VALUE, "" + p.getIndex());
+				IloNumVar var2 = cplex.intVar(0, pieces.size(), "" + p.getIndex());
 				x.get(r).put(p, var2);
 			}
 		}
