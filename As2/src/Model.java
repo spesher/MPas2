@@ -29,6 +29,7 @@ public class Model{
 		addVariables();
 		addObjective();
 		addDoPiecesConstraints();
+		addLengthConstraints();		// TO DO
 		cplex.exportModel("model.lp");
 	}
 	
@@ -47,9 +48,16 @@ public class Model{
 	 */
 	private void addVariables() throws IloException
 	{
-		for (Rod a: rods)
+		for (Rod r: rods)
 		{
-					
+			// add the rod variable y
+			IloNumVar var = cplex.boolVar("Rod");
+			y.put(r, var);
+			// add a variable for each piece, for this rod (x_ik)
+			for (Piece p : pieces) {
+				IloNumVar var2 = cplex.intVar(0, Integer.MAX_VALUE, "" + p.getIndex());
+				x.get(r).put(p, var2);
+			}
 		}
 	}
 	
@@ -60,24 +68,47 @@ public class Model{
 	private void addObjective() throws IloException
 	{
 		IloNumExpr obj = cplex.constant(0);
-		// loop over the rods to add the connection cost and fixed cost
-		for (Rod a : rods) {
-			if (x.containsKey(a)) 
+		// add the vars corresponding to the rods (y_k)
+		for (Rod r : rods) { 
 			{
-				
+				 obj = cplex.sum(obj, y.get(r));	
 			}
 		}
 		cplex.addMinimize(obj);
 	}
 	
 	/**
-	 * Adds the constraints that make sure each Piece is performed, either by a small or large bus
+	 * Adds the constraints that make sure each Piece is cut
 	 * @throws IloException
 	 */
 	private void addDoPiecesConstraints() throws IloException
 	{
-		
+		// add a constraint for each piece
+		for (Piece p : pieces) {
+			IloNumExpr lhs = cplex.constant(0);
+			// sum over the rods
+			for (Rod r : rods) {
+				lhs = cplex.sum(lhs, x.get(r).get(p));
+			}
+			// add the constraint: rhs=1 because pieces of the same length are uniquely defined
+			cplex.addEq(lhs, 1);
+		}
 	}
+	
+	/**
+	 * Adds the constraints that make sure the lengths of the rods are respected and the x and y vars are connected
+	 * @throws IloException
+	 */
+	private void addLengthConstraints() throws IloException 
+	{
+		// add a constraint for each rod
+		for (Rod r : rods) {
+			IloNumExpr lhs = cplex.constant(0);
+			// nu loopen over de pieces en het gewicht meetellen
+		}
+	}
+	
+	
 
 	// methods to retrieve information about the solution
 	/**
