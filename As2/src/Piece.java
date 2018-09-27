@@ -1,6 +1,6 @@
 /**
  * Models the piece in the Cutting Stock problem
- * @author Reinier van Uden
+ * @author Peter de Voogd and Reinier van Uden
  *
  */
 public class Piece {

@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -6,6 +7,13 @@ import ilog.concert.IloException;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
+import ilog.cplex.IloCplex.UnknownObjectException;
+
+/**
+ * The cplex model for the Cutting Stock model
+ * @author Peter de Voogd and Reinier van Uden
+ *
+ */
 
 public class Model{
 	private final List<Rod> rods;
@@ -24,12 +32,12 @@ public class Model{
 		cplex = new IloCplex();
 		x = new HashMap<Rod,Map<Piece,IloNumVar>>();
 		y = new HashMap<Rod,IloNumVar>();
-		ROD_LENGTH = pieces.get(0).getLength();
+		ROD_LENGTH = rods.get(0).getLength();
 		
 		addVariables();
 		addObjective();
 		addDoPiecesConstraints();
-		addLengthConstraints();		// TODO
+		addLengthConstraints();
 		cplex.exportModel("model.lp");
 	}
 	
@@ -53,6 +61,9 @@ public class Model{
 			// add the rod variable y
 			IloNumVar var = cplex.boolVar("Rod");
 			y.put(r, var);
+			// create a new map  for this rod
+			Map<Piece, IloNumVar> varMap = new HashMap<Piece,IloNumVar>();
+			x.put(r, varMap);
 			// add a variable for each piece, for this rod (x_ik)
 			for (Piece p : pieces) {
 				IloNumVar var2 = cplex.intVar(0, pieces.size(), "" + p.getIndex());
@@ -96,7 +107,8 @@ public class Model{
 	}
 	
 	/**
-	 * Adds the constraints that make sure the lengths of the rods are respected and the x and y vars are connected
+	 * Adds the constraints that make sure the lengths of the rods are respected 
+	 * and the x and y vars are connected.
 	 * @throws IloException
 	 */
 	private void addLengthConstraints() throws IloException 
@@ -104,7 +116,14 @@ public class Model{
 		// add a constraint for each rod
 		for (Rod r : rods) {
 			IloNumExpr lhs = cplex.constant(0);
-			// nu loopen over de pieces en het gewicht meetellen
+			// now we loop over the pieces to compute the total length of the pieces in the rod
+			for (Piece p : pieces) {
+				IloNumExpr prod = cplex.prod(x.get(r).get(p), p.getLength());
+				lhs = cplex.sum(lhs, prod);
+			}
+			IloNumExpr rhs = cplex.prod(ROD_LENGTH, y.get(r));
+			// add the constraint
+			cplex.addLe(lhs, rhs);
 		}
 	}
 	
@@ -120,4 +139,30 @@ public class Model{
 		return cplex.getObjValue();
 	}
 	
+	/**
+	 * Returns a map from the used rods to the pieces which are cut from this rod.
+	 * @return
+	 * @throws IloException 
+	 * @throws UnknownObjectException 
+	 */
+	public Map<Rod,List<Piece>> getRods() throws UnknownObjectException, IloException {
+		Map<Rod, List<Piece>> result = new HashMap<Rod,List<Piece>>();
+		for (Rod r : rods) {
+			double val = cplex.getValue(y.get(r));
+			if (val > 0.01) {
+				// put the pieces in a list
+				List<Piece> currentPieces = new ArrayList<Piece>();
+				for (Piece p : pieces) {
+					double pieceVal = cplex.getValue(x.get(r).get(p));
+					// check whether the piece is cut from this rod
+					if (pieceVal > 0.01) {
+						currentPieces.add(p);
+					}
+				}
+				result.put(r, currentPieces);
+			}
+		}
+		return result;
+	}
+ 	
 }
