@@ -39,6 +39,11 @@ public class Main
 		// create all possible patterns
 		List<Pattern> patterns = createFeasiblePatterns(allPieces, ROD_LENGTH);
 		System.out.println(patterns.size()); // zelfde als Pim
+		
+		model.solveLP();
+		// print solution info
+		System.out.println("Objective: " + model.getObjective()); //=(110+150+125+140+105+123=5)/150
+		printSolutionInfo(model);
 	}
 	
 	/**
