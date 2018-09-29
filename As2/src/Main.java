@@ -18,7 +18,7 @@ import ilog.cplex.IloCplex.UnknownObjectException;
 
 public class Main 
 {
-	
+
 	public static void main(String[] args) throws IloException
 	{
 		final int ROD_LENGTH = 150;
@@ -34,18 +34,34 @@ public class Main
 		model.solve();
 		// print solution info
 		System.out.println("Objective: " + model.getObjective());
-		printSolutionInfo(model);
-		
-		// create all possible patterns
-		List<Pattern> patterns = createFeasiblePatterns(allPieces, ROD_LENGTH);
-		System.out.println(patterns.size()); // zelfde als Pim
-		
+		printSolutionInfo(model);		
+
 		model.solveLP();
 		// print solution info
 		System.out.println("Objective: " + model.getObjective()); //=(110+150+125+140+105+123=5)/150
 		printSolutionInfo(model);
+
+		//Alternative formulation:
+		// create all possible patterns
+		List<Pattern> patterns = createFeasiblePatterns(allPieces, ROD_LENGTH);
+		System.out.println(patterns.size()); // zelfde als Pim
+		// build the model
+		Model2 model2 = new Model2(patterns, allPieces);
+		// solve
+		model2.solve();
+		// print solution info
+		System.out.println("Objective: " + model2.getObjective());
+		printSolutionInfo(model2);
+		model2.solveLP();
+		// print solution info
+		System.out.println("Objective: " + model.getObjective()); //=(110+150+125+140+105+123=5)/150
+		printSolutionInfo(model2);
+
+
+
+
 	}
-	
+
 	/**
 	 * Creates a list of all feasible patterns, for the given list of pieces.
 	 * @return
@@ -98,7 +114,7 @@ public class Main
 		else {result.addAll(q2); }
 		return result;
 	}
-	
+
 	/**
 	 * Prints solution information from the model that has been solved.
 	 * @throws IloException 
@@ -120,6 +136,22 @@ public class Main
 		}
 	}
 	
+	private static void printSolutionInfo(Model2 model2) throws UnknownObjectException, IloException {
+		List<Pattern> result = model2.getPatterns();
+		// print the pieces per rod, and the total length used per rod
+		int counter = 0;
+		for (Pattern p : result) {
+			counter++;
+			System.out.print("Pattern " + counter + ": ");
+			int length = 0;
+			for (Piece pi : p.getPieces()) {
+				length = length + pi.getLength();
+				System.out.print(pi + " ");
+			}
+			System.out.println(" with total length: " + length);
+		}
+	}
+
 	/**
 	 * Read the information about the pieces from the given file. Returns a list of Piece objects.
 	 * @param file
@@ -144,5 +176,5 @@ public class Main
 		}
 		return allPieces;
 	}
-	
+
 }
