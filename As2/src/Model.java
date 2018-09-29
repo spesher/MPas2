@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import ilog.concert.IloException;
+import ilog.concert.IloModel;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
+import ilog.concert.IloNumVarType;
 import ilog.cplex.IloCplex;
 import ilog.cplex.IloCplex.UnknownObjectException;
 
@@ -23,7 +25,7 @@ public class Model{
 	private Map<Rod,Map<Piece,IloNumVar>> x;
 	private Map<Rod,IloNumVar> y;
 	private final int ROD_LENGTH;
-
+	
 	public Model(List<Rod> rods, List<Piece> pieces) throws IloException
 	{
 		this.rods = rods;
@@ -39,6 +41,7 @@ public class Model{
 		addDoPiecesConstraints();
 		addLengthConstraints();
 		cplex.exportModel("model.lp");
+		cplex.setOut(null);
 	}
 	
 	/**
@@ -49,6 +52,18 @@ public class Model{
 	{
 		cplex.solve();
 	}
+
+ 	
+	public void solveLP() throws IloException
+	{
+		for (Rod r: rods)
+		{
+			// get the rod variable from y and add LP relaxation
+			cplex.add(cplex.conversion(y.get(r),IloNumVarType.Float));
+		}
+		cplex.solve();
+		
+	}
 	
 	/**
 	 * Add the vars to the model
@@ -56,19 +71,21 @@ public class Model{
 	 */
 	private void addVariables() throws IloException
 	{
+		int i = 1;
 		for (Rod r: rods)
 		{
 			// add the rod variable y
-			IloNumVar var = cplex.boolVar("Rod");
+			IloNumVar var = cplex.intVar(0,1,"y"+i);
 			y.put(r, var);
 			// create a new map  for this rod
 			Map<Piece, IloNumVar> varMap = new HashMap<Piece,IloNumVar>();
 			x.put(r, varMap);
 			// add a variable for each piece, for this rod (x_ik)
 			for (Piece p : pieces) {
-				IloNumVar var2 = cplex.intVar(0, pieces.size(), "" + p.getIndex());
+				IloNumVar var2 = cplex.intVar(0, pieces.size(), "x"+i+"," + p.getIndex());
 				x.get(r).put(p, var2);
 			}
+			i++;
 		}
 	}
 	
@@ -102,7 +119,7 @@ public class Model{
 				lhs = cplex.sum(lhs, x.get(r).get(p));
 			}
 			// add the constraint: rhs=1 because pieces of the same length are uniquely defined
-			cplex.addEq(lhs, 1);
+			cplex.addEq(lhs, 1,"cover"+p.getIndex());
 		}
 	}
 	
@@ -114,6 +131,7 @@ public class Model{
 	private void addLengthConstraints() throws IloException 
 	{
 		// add a constraint for each rod
+		int i = 1;
 		for (Rod r : rods) {
 			IloNumExpr lhs = cplex.constant(0);
 			// now we loop over the pieces to compute the total length of the pieces in the rod
@@ -123,7 +141,8 @@ public class Model{
 			}
 			IloNumExpr rhs = cplex.prod(ROD_LENGTH, y.get(r));
 			// add the constraint
-			cplex.addLe(lhs, rhs);
+			cplex.addLe(lhs, rhs,"length"+i);
+			i++;
 		}
 	}
 	
@@ -164,5 +183,4 @@ public class Model{
 		}
 		return result;
 	}
- 	
 }
