@@ -37,7 +37,7 @@ public class Pattern {
 	public String toString() {
 		String result = index + "[";
 		for (Piece p : pieces) {
-			result = result + p.getLength() + ",";
+			result = result + p.getIndex() + ",";
 		}
 		result = result + "]";
 		return result;

@@ -61,28 +61,73 @@ public class Main
 
 		//Large dataset
 		final int ROD_LENGTH2 = 400;
-		allPieces = readPatterns(new File("large.txt")); //TODO function
-		rods = new ArrayList<Rod>();
-		// create a rod for each piece. Then there will be enough for sure
-		for (int i = 0; i < allPieces.size(); i++) {
-			rods.add(new Rod(ROD_LENGTH2));
+		List<Piece> piecesLarge = readFile(new File("large_pieces.txt"));
+		List<Pattern> patternsLarge = readPatterns(new File("large_patterns.txt"), piecesLarge);
+		// try the readPattern method
+		for (Pattern p : patternsLarge) {
+			System.out.println(p);
 		}
+//		rods = new ArrayList<Rod>();
+//		// create a rod for each piece. Then there will be enough for sure
+//		for (int i = 0; i < piecesLarge.size(); i++) {
+//			rods.add(new Rod(ROD_LENGTH2));
+//		}
 		//Alternative formulation:
 		// create all possible patterns
-		patterns = createFeasiblePatterns(allPieces, ROD_LENGTH2);
-		System.out.println(patterns.size());
+//		patterns = createFeasiblePatterns(piecesLarge, ROD_LENGTH2);
+//		System.out.println(patterns.size());
 		// build the model
-		model2 = new Model2(patterns, allPieces);
+		model2 = new Model2(patternsLarge, piecesLarge);
 		// solve
-		model2.solve();
-		// print solution info
-		System.out.println("Objective: " + model2.getObjective());
-		printSolutionInfo(model2);
+//		model2.solve();
+//		// print solution info
+//		System.out.println("Objective: " + model2.getObjective());
+//		printSolutionInfo(model2);
 		model2.solveLP();
 		// print solution info
 		System.out.println("Objective: " + model2.getObjective());
 		printSolutionInfo(model2);
-
+		model2.solveLPColGen(1);
+	}
+	
+	/**
+	 * Reads patterns from a file. IMPORTANT: it assumes the patterns are in rows, so I transposed the patterns
+	 * given in the .xlsx file.
+	 * Tested: first two patterns were read correctly
+	 * @param file
+	 * @return
+	 */
+	private static List<Pattern> readPatterns(File file, List<Piece> pieces) {
+		List<Pattern> patterns = new ArrayList<Pattern>();
+		try
+		{
+			Scanner s = new Scanner(file);
+			int counter = 0;
+			while (s.hasNextLine())
+			{
+				String line = s.nextLine();
+				counter++;
+				int index = counter;
+				String[] patternString = line.split(" ");		// puts each digit in the array, separately
+				// determine which pieces to add to the pattern
+				List<Piece> inPattern = new ArrayList<Piece>();
+				for (int i=0; i<patternString.length; i++) {
+					// add each piece which has a number 1
+					if (patternString[i].equals("1")) {
+						inPattern.add(pieces.get(i));
+					}
+				}
+				// create the new pattern and add it to the list
+				Pattern p = new Pattern(index, inPattern);
+				patterns.add(p);
+			}
+			s.close();
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		return patterns;
 	}
 
 	/**
@@ -192,6 +237,7 @@ public class Main
 				Piece p = new Piece(index, length);
 				allPieces.add(p);
 			}
+			s.close();
 		}
 		catch(IOException e)
 		{

@@ -8,6 +8,7 @@ import ilog.concert.IloModel;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.concert.IloNumVarType;
+import ilog.concert.IloRange;
 import ilog.cplex.IloCplex;
 import ilog.cplex.IloCplex.UnknownObjectException;
 
@@ -23,14 +24,17 @@ public class Model2{
 	private IloCplex cplex;
 	// variables
 	private Map<Pattern,IloNumVar> x;
+	// map for the constraints
+	private Map<Piece, IloRange> constraints;
 	
 	public Model2(List<Pattern> patterns, List<Piece> pieces) throws IloException
 	{
 		this.patterns = patterns;
 		this.pieces = pieces;
-		
+		System.out.println(patterns.size() + ", " + pieces.size());
 		cplex = new IloCplex();
 		x = new HashMap<Pattern,IloNumVar>();
+		constraints = new HashMap<Piece, IloRange>();
 		
 		addVariables();
 		addObjective();
@@ -48,7 +52,10 @@ public class Model2{
 		cplex.solve();
 	}
 
- 	
+ 	/**
+ 	 * Solve the LP relaxation
+ 	 * @throws IloException
+ 	 */
 	public void solveLP() throws IloException
 	{
 		for (Pattern r: patterns)
@@ -60,6 +67,40 @@ public class Model2{
 		
 	}
 	
+	public Map<Piece, Double> getDuals() throws UnknownObjectException, IloException {
+		Map<Piece, Double> duals = new HashMap<Piece,Double>();
+		// retrieve the value for each constraint
+		for (Piece p : pieces) {
+			double val = cplex.getDual(constraints.get(p));
+			duals.put(p, val);
+		}
+		return duals;
+	}
+	
+	/**
+	 * Solve the LP relaxation with column generation, for a given number of iterations.
+	 * @throws IloException
+	 */
+	public void solveLPColGen(int iterations) throws IloException
+	{
+		// initialize the patterns 
+		List<Pattern> curPatterns = new ArrayList<Pattern>(patterns);
+		Map<Piece,Double> duals = new HashMap<Piece,Double>();
+		// run the algorithm for each iteration
+//		for (int i=0; i<iterations; i++) {
+			// solve the restricted master problem
+			this.solveLP();
+			System.out.println(this.getObjective());
+			// obtain the dual variables
+			duals = this.getDuals();
+			for (Piece p : duals.keySet()) {
+				System.out.println(duals.get(p));
+			}
+			// TODO: build the model for the pricing problem and solve it
+//		}
+		
+	}
+	
 	/**
 	 * Add the vars to the model
 	 * @throws IloException
@@ -68,6 +109,22 @@ public class Model2{
 	{
 		int i = 1;
 		for (Pattern r: patterns)
+		{
+			// add the pattern variable y
+			IloNumVar var = cplex.intVar(0,1,"x"+i);
+			x.put(r, var);			
+			i++;
+		}
+	}
+	
+	/**
+	 * Add the vars for the given patterns
+	 * @throws IloException
+	 */
+	private void addVariables(List<Pattern> pats) throws IloException
+	{
+		int i = x.keySet().size() + 1;		// start counting from the last index
+		for (Pattern r: pats)
 		{
 			// add the pattern variable y
 			IloNumVar var = cplex.intVar(0,1,"x"+i);
@@ -93,7 +150,7 @@ public class Model2{
 	}
 	
 	/**
-	 * Adds the constraints that make sure each Piece is cut
+	 * Adds the constraints that make sure each Piece is cut. Save the constraints in a map
 	 * @throws IloException
 	 */
 	private void addDoPiecesConstraints() throws IloException
@@ -109,7 +166,9 @@ public class Model2{
 				}
 			}
 			// add the constraint: rhs=1 because pieces of the same length are uniquely defined
-			cplex.addEq(lhs, 1,"cover"+p.getIndex());
+			IloRange currentConstr = cplex.addGe(lhs, 1,"cover"+p.getIndex());		// doordat dit eerst addEq was, kreeg ik een foutmelding bij c
+			// add to the map
+			constraints.put(p, currentConstr);
 		}
 	}
 
