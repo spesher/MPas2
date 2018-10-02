@@ -44,7 +44,7 @@ public class Main
 		//Alternative formulation:
 		// create all possible patterns
 		List<Pattern> patterns = createFeasiblePatterns(allPieces, ROD_LENGTH);
-		System.out.println(patterns.size()); // zelfde als Pim
+		System.out.println(patterns.size());
 		// build the model
 		Model2 model2 = new Model2(patterns, allPieces);
 		// solve
@@ -54,11 +54,34 @@ public class Main
 		printSolutionInfo(model2);
 		model2.solveLP();
 		// print solution info
-		System.out.println("Objective: " + model.getObjective()); //=(110+150+125+140+105+123=5)/150
+		System.out.println("Objective: " + model2.getObjective()); //=(110+150+125+140+105+123=5)/150
 		printSolutionInfo(model2);
+		
 
 
-
+		//Large dataset
+		final int ROD_LENGTH2 = 400;
+		allPieces = readPatterns(new File("large.txt")); //TODO function
+		rods = new ArrayList<Rod>();
+		// create a rod for each piece. Then there will be enough for sure
+		for (int i = 0; i < allPieces.size(); i++) {
+			rods.add(new Rod(ROD_LENGTH2));
+		}
+		//Alternative formulation:
+		// create all possible patterns
+		patterns = createFeasiblePatterns(allPieces, ROD_LENGTH2);
+		System.out.println(patterns.size());
+		// build the model
+		model2 = new Model2(patterns, allPieces);
+		// solve
+		model2.solve();
+		// print solution info
+		System.out.println("Objective: " + model2.getObjective());
+		printSolutionInfo(model2);
+		model2.solveLP();
+		// print solution info
+		System.out.println("Objective: " + model2.getObjective());
+		printSolutionInfo(model2);
 
 	}
 
