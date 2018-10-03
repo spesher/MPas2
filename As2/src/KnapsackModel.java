@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -5,25 +7,32 @@ import ilog.concert.IloException;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
+import ilog.cplex.IloCplex.UnknownObjectException;
 
 public class KnapsackModel 
 {
 	private final int ROD_LENGTH;
 	private Map<Piece,Double> duals;
 	final List<Piece> pieces;
-	private Pattern pattern;
+	private int nrPatterns;
 	
 	private IloCplex cplex;
 	private Map<Piece,IloNumVar> a;
 	
-	public KnapsackModel(int ROD_LENGTH, Map<Piece, Double> duals, List<Piece> pieces) throws IloException {
+	public KnapsackModel(int ROD_LENGTH, Map<Piece, Double> duals, List<Piece> pieces, int nrPatterns) throws IloException {
 		this.ROD_LENGTH = ROD_LENGTH;
 		this.duals = duals;
 		this.pieces = pieces;
+		this.nrPatterns = nrPatterns;
+		
+		cplex = new IloCplex();
+		a = new HashMap<Piece,IloNumVar>();
+		
 		addVariables();
 		addObjective();
 		addWeightConstraint();
-		cplex.exportModel("knapsack.lp");
+//		cplex.exportModel("knapsack.lp");
+		cplex.setOut(null);
 	}
 
 	private void addVariables() throws IloException {
@@ -38,7 +47,7 @@ public class KnapsackModel
 		IloNumExpr obj = cplex.constant(0);
 		for(Piece p: pieces)
 		{
-			obj = cplex.sum(obj,a.get(p));
+			obj = cplex.sum(obj,cplex.prod(a.get(p), duals.get(p)));
 		}
 		cplex.addMaximize(obj);
 	}
@@ -61,8 +70,19 @@ public class KnapsackModel
 		cplex.solve();
 	}
 	
-	public Pattern getPattern() {
-		return pattern;
+	public Pattern getPattern() throws UnknownObjectException, IloException {
+		List<Piece> patternPieces = new ArrayList<Piece>();
+		for (Piece p : pieces) {
+			double val = cplex.getValue(a.get(p));
+			if (val > 0.01) {
+				patternPieces.add(p);
+			}
+		}
+		return new Pattern(nrPatterns + 1,patternPieces);
+	}
+	
+	public double getObjective() throws IloException {
+		return cplex.getObjValue();
 	}
 	
 	

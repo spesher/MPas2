@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,26 +76,64 @@ public class ModelCG{
 	 */
 	public void solveLPColGen(int iterations) throws IloException
 	{
-		// initialize the patterns 
-		List<Pattern> curPatterns = new ArrayList<Pattern>(patterns);
+		// initialize the map for the duals
 		Map<Piece,Double> duals = new HashMap<Piece,Double>();
 		// run the algorithm for each iteration
+		int c = 0;		// count the number of times the heuristic pattern was used
 		for (int i=0; i<iterations; i++) {
 			// solve the restricted master problem
 			this.solve();
 			System.out.println("Iteration " + i + ": " + this.getObjective());
 			// obtain the dual variables
 			duals = this.getDuals();
-			// build model for the pricing problem
-//			KnapsackModel pricing = new KnapsackModel(ROD_LENGTH, duals, pieces);
-			// TODO: toevoegen dat je uit de loop stapt als reduced cost niet negatief is.
-			// adjust the model such that the new pattern is included
-			Pattern newPattern = null;		// TODO: wordt de pattern uit het knapsackmodel
+			
+			// knapsack heuristic
+			for (Piece p: pieces)
+			{
+				double ratio = duals.get(p)/p.getLength();
+				p.setRatio(ratio);
+			}
+			Collections.sort(pieces);
+			List<Piece> heuristicPieces = new ArrayList<Piece>();
+			int length = 0;
+			double totalCost = 0;;
+			// add all pieces that fit
+			for (Piece p: pieces)
+			{
+				if (length + p.getLength() < ROD_LENGTH) {
+					heuristicPieces.add(p);
+					totalCost = totalCost + duals.get(p);
+					length = length + p.getLength();
+				} 
+			}
+			double reducedCost = 1-totalCost;
+			Pattern newPattern = null;
+			
+			// check whether the heuristic was enough
+			if (reducedCost < 0) {
+				newPattern = new Pattern(patterns.size()+1, heuristicPieces);
+				c++;
+			} else {
+				// build model for the pricing problem
+				KnapsackModel pricing = new KnapsackModel(ROD_LENGTH, duals, pieces, patterns.size());
+				pricing.solve();
+				reducedCost = 1-pricing.getObjective();
+				// adjust the model such that the new pattern is included
+				newPattern = pricing.getPattern();
+				
+			}
+			// if reducedCost not negative, we are optimal
+			if (reducedCost >= 0) {
+				break;
+			}
+			System.out.println("Pattern added in iteration " + i + ": " + newPattern.toString());
+			patterns.add(newPattern);
 			addVariable(newPattern);
 			changeDoPiecesConstraints(newPattern.getPieces());		// change the constraints for the pieces in the new pattern
 			regenerateObjective();
+//			cplex.exportModel("modelCGiteratie1.lp");
 		}
-		
+		System.out.println(c);
 	}
 	
 	/**

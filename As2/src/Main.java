@@ -78,7 +78,8 @@ public class Main
 		printSolutionInfo(model2);
 		
 		// part d
-		
+		ModelCG m = new ModelCG(patternsLarge, piecesLarge);
+		m.solveLPColGen(1000);
 	}
 	
 	/**
