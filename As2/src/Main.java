@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -67,27 +68,17 @@ public class Main
 		for (Pattern p : patternsLarge) {
 			System.out.println(p);
 		}
-//		rods = new ArrayList<Rod>();
-//		// create a rod for each piece. Then there will be enough for sure
-//		for (int i = 0; i < piecesLarge.size(); i++) {
-//			rods.add(new Rod(ROD_LENGTH2));
-//		}
-		//Alternative formulation:
-		// create all possible patterns
-//		patterns = createFeasiblePatterns(piecesLarge, ROD_LENGTH2);
-//		System.out.println(patterns.size());
-		// build the model
+		
+		// Part c
 		model2 = new Model2(patternsLarge, piecesLarge);
-		// solve
-//		model2.solve();
-//		// print solution info
-//		System.out.println("Objective: " + model2.getObjective());
-//		printSolutionInfo(model2);
+		// solve the LP
 		model2.solveLP();
 		// print solution info
 		System.out.println("Objective: " + model2.getObjective());
 		printSolutionInfo(model2);
-		model2.solveLPColGen(1);
+		
+		// part d
+		
 	}
 	
 	/**
