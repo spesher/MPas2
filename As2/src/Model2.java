@@ -31,7 +31,6 @@ public class Model2{
 	{
 		this.patterns = patterns;
 		this.pieces = pieces;
-		System.out.println(patterns.size() + ", " + pieces.size());
 		cplex = new IloCplex();
 		x = new HashMap<Pattern,IloNumVar>();
 		constraints = new HashMap<Piece, IloRange>();

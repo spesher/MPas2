@@ -126,7 +126,7 @@ public class ModelCG{
 			if (reducedCost >= 0) {
 				break;
 			}
-			System.out.println("Pattern added in iteration " + i + ": " + newPattern.toString());
+			System.out.println("Pattern added in iteration " + i + ": " + newPattern.toString() + " with reduced cost: " + reducedCost);
 			patterns.add(newPattern);
 			addVariable(newPattern);
 			changeDoPiecesConstraints(newPattern.getPieces());		// change the constraints for the pieces in the new pattern

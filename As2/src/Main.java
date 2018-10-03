@@ -22,6 +22,7 @@ public class Main
 
 	public static void main(String[] args) throws IloException
 	{
+		System.out.println("Part a: ");
 		final int ROD_LENGTH = 150;
 		List<Piece> allPieces = readFile(new File("small.txt"));
 		List<Rod> rods = new ArrayList<Rod>();
@@ -41,8 +42,11 @@ public class Main
 		// print solution info
 		System.out.println("Objective: " + model.getObjective()); //=(110+150+125+140+105+123=5)/150
 		printSolutionInfo(model);
-
+		
 		//Alternative formulation:
+		System.out.println("");
+		System.out.println("");
+		System.out.println("Part b:");
 		// create all possible patterns
 		List<Pattern> patterns = createFeasiblePatterns(allPieces, ROD_LENGTH);
 		System.out.println(patterns.size());
@@ -64,12 +68,11 @@ public class Main
 		final int ROD_LENGTH2 = 400;
 		List<Piece> piecesLarge = readFile(new File("large_pieces.txt"));
 		List<Pattern> patternsLarge = readPatterns(new File("large_patterns.txt"), piecesLarge);
-		// try the readPattern method
-		for (Pattern p : patternsLarge) {
-			System.out.println(p);
-		}
 		
 		// Part c
+		System.out.println("");
+		System.out.println("");
+		System.out.println("Part c:");
 		model2 = new Model2(patternsLarge, piecesLarge);
 		// solve the LP
 		model2.solveLP();
@@ -78,8 +81,18 @@ public class Main
 		printSolutionInfo(model2);
 		
 		// part d
+		System.out.println("");
+		System.out.println("");
+		System.out.println("Part d:");
 		ModelCG m = new ModelCG(patternsLarge, piecesLarge);
-		m.solveLPColGen(1000);
+		m.solveLPColGen(8);
+		
+		// test: generate all feasible patterns for large instance
+		List<Pattern> patternsAll = createFeasiblePatterns(piecesLarge, ROD_LENGTH2);
+		System.out.println(patternsAll.size());
+		Model2 largeModel = new Model2(patternsAll, piecesLarge);
+		largeModel.solve();
+		System.out.println(largeModel.getObjective());
 	}
 	
 	/**
